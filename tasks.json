@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "title": "Crear tarea",
+    "due_date": "2025-05-24",
+    "priority": 1,
+    "completed": false
+  }
+]
