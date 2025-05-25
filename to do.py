@@ -22,127 +22,67 @@ def next_id(tasks):
 class TodoApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Lista de Tareas – Filtrado por Fecha")
+        self.root.title("Lista de Tareas – Confirmación Al Eliminar")
         self.tasks = load_tasks()
 
-        # Layout principal
         self.frame = ttk.Frame(root, padding=10)
         self.frame.pack(fill=tk.BOTH, expand=True)
-
         self.listbox = tk.Listbox(self.frame, width=60, height=15)
-        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.listbox.bind('<<ListboxSelect>>', self.on_select)
-
-        scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=self.listbox.yview)
-        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
+        self.listbox.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
+        scrollbar = ttk.Scrollbar(self.frame,orient=tk.VERTICAL,command=self.listbox.yview)
+        scrollbar.pack(side=tk.LEFT,fill=tk.Y)
         self.listbox.config(yscrollcommand=scrollbar.set)
 
-        # Botones de acción
         btn_frame = ttk.Frame(root, padding=10)
         btn_frame.pack(fill=tk.X)
-
         ttk.Button(btn_frame, text="Crear", command=self.create_task).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Editar", command=self.edit_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Eliminar", command=self.delete_task).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Marcar/Desmarcar", command=self.toggle_task).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Filtrar hoy", command=self.filter_today).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Refrescar", command=self.refresh_list).pack(side=tk.LEFT, padx=5)
 
         self.status = ttk.Label(root, text="")
         self.status.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
-
         self.refresh_list()
 
     def refresh_list(self):
-        """Recarga y muestra todas las tareas."""
         self.tasks = load_tasks()
-        self._display_tasks(self.tasks, header=f"Tareas cargadas: {len(self.tasks)}")
-
-    def filter_today(self):
-        """Muestra solo las tareas cuya due_date es hoy."""
-        today = datetime.today().date().isoformat()
-        todays = [t for t in self.tasks if t['due_date'] == today]
-        if not todays:
-            messagebox.showinfo("Filtrar hoy", "No hay tareas para hoy.")
-            return
-        self._display_tasks(todays, header=f"Tareas para hoy: {len(todays)}")
-
-    def _display_tasks(self, task_list, header=""):
-        """Helper para poblar el Listbox y actualizar status."""
-        self.listbox.delete(0, tk.END)
-        for t in task_list:
-            status = "✔" if t['completed'] else "···"
-            text = f"{t['id']:<3} {t['title'][:30]:30} {t['due_date']} Prio:{t['priority']} {status}"
-            self.listbox.insert(tk.END, text)
-        self.status.config(text=header)
-
-    def on_select(self, event):
-        pass  # Por ahora no hace nada al seleccionar
-
-    def create_task(self):
-        title = simpledialog.askstring("Título", "Ingrese el título de la tarea:")
-        if not title:
-            messagebox.showerror("Error", "El título no puede estar vacío.")
-            return
-        due = simpledialog.askstring("Fecha de vencimiento", "Ingrese la fecha (YYYY-MM-DD):")
-        try:
-            due_date = datetime.strptime(due, '%Y-%m-%d').date().isoformat()
-        except Exception:
-            messagebox.showerror("Error", "Formato de fecha inválido.")
-            return
-        prio = simpledialog.askinteger("Prioridad", "Prioridad (1 alta, 2 media, 3 baja):", minvalue=1, maxvalue=3)
-        task = {
-            'id': next_id(self.tasks),
-            'title': title,
-            'due_date': due_date,
-            'priority': prio or 2,
-            'completed': False
-        }
-        self.tasks.append(task)
-        save_tasks(self.tasks)
-        self.refresh_list()
-
-    def edit_task(self):
-        sel = self.listbox.curselection()
-        if not sel:
-            messagebox.showwarning("Atención", "Seleccione una tarea para editar.")
-            return
-        idx = sel[0]
-        task = self.tasks[idx]
-        new_title = simpledialog.askstring("Editar título", "Nuevo título:", initialvalue=task['title'])
-        if new_title:
-            task['title'] = new_title
-        new_due = simpledialog.askstring("Editar fecha", "Nueva fecha (YYYY-MM-DD):", initialvalue=task['due_date'])
-        try:
-            task['due_date'] = datetime.strptime(new_due, '%Y-%m-%d').date().isoformat()
-        except Exception:
-            messagebox.showwarning("Formato", "Fecha inválida; se mantiene la anterior.")
-        save_tasks(self.tasks)
-        self.refresh_list()
+        self._display_tasks(self.tasks, header=f"Tareas: {len(self.tasks)}")
 
     def delete_task(self):
         sel = self.listbox.curselection()
         if not sel:
-            messagebox.showwarning("Atención", "Seleccione una tarea para eliminar.")
+            messagebox.showwarning("Atención", "Seleccione una tarea.")
             return
-        if messagebox.askyesno("Confirmar", "¿Eliminar la tarea seleccionada?"):
-            idx = sel[0]
+        idx = sel[0]
+        task = self.tasks[idx]
+        pregunta = f"¿Eliminar tarea «{task['title']}» (ID={task['id']})?"
+        if messagebox.askyesno("Confirmar Eliminación", pregunta):
             del self.tasks[idx]
             save_tasks(self.tasks)
             self.refresh_list()
 
-    def toggle_task(self):
-        sel = self.listbox.curselection()
-        if not sel:
-            messagebox.showwarning("Atención", "Seleccione una tarea para marcar/desmarcar.")
-            return
-        idx = sel[0]
-        self.tasks[idx]['completed'] = not self.tasks[idx]['completed']
+    def _display_tasks(self, task_list, header=""):
+        self.listbox.delete(0, tk.END)
+        for t in task_list:
+            estado = "✔" if t['completed'] else "···"
+            text = f"{t['id']:<3} {t['title'][:30]:30} {t['due_date']} Prio:{t['priority']} {estado}"
+            self.listbox.insert(tk.END, text)
+        self.status.config(text=header)
+
+    def create_task(self):
+        title = simpledialog.askstring("Título","Ingrese título:")
+        if not title:
+            messagebox.showerror("Error","Título vacío."); return
+        due = simpledialog.askstring("Fecha","Ingresa fecha (YYYY-MM-DD):")
+        try: due_date = datetime.strptime(due,'%Y-%m-%d').date().isoformat()
+        except:
+            messagebox.showerror("Error","Fecha inválida."); return
+        prio = simpledialog.askinteger("Prioridad","1 alta,2 media,3 baja:",1,3)
+        task = {'id':next_id(self.tasks),'title':title,'due_date':due_date,
+                'priority':prio or 2, 'completed':False}
+        self.tasks.append(task)
         save_tasks(self.tasks)
         self.refresh_list()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.geometry("650x450")
-    app = TodoApp(root)
-    root.mainloop()
+    root = tk.Tk(); root.geometry("650x450")
+    TodoApp(root); root.mainloop()
