@@ -22,10 +22,10 @@ def next_id(tasks):
 class TodoApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Lista de Tareas-Ibero Pruebas de software y aplicabilidad ")
+        self.root.title("Lista de Tareas – Filtrado por Fecha")
         self.tasks = load_tasks()
 
-        # Layout
+        # Layout principal
         self.frame = ttk.Frame(root, padding=10)
         self.frame.pack(fill=tk.BOTH, expand=True)
 
@@ -37,6 +37,7 @@ class TodoApp:
         scrollbar.pack(side=tk.LEFT, fill=tk.Y)
         self.listbox.config(yscrollcommand=scrollbar.set)
 
+        # Botones de acción
         btn_frame = ttk.Frame(root, padding=10)
         btn_frame.pack(fill=tk.X)
 
@@ -44,6 +45,7 @@ class TodoApp:
         ttk.Button(btn_frame, text="Editar", command=self.edit_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Eliminar", command=self.delete_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Marcar/Desmarcar", command=self.toggle_task).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Filtrar hoy", command=self.filter_today).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Refrescar", command=self.refresh_list).pack(side=tk.LEFT, padx=5)
 
         self.status = ttk.Label(root, text="")
@@ -52,16 +54,30 @@ class TodoApp:
         self.refresh_list()
 
     def refresh_list(self):
+        """Recarga y muestra todas las tareas."""
         self.tasks = load_tasks()
+        self._display_tasks(self.tasks, header=f"Tareas cargadas: {len(self.tasks)}")
+
+    def filter_today(self):
+        """Muestra solo las tareas cuya due_date es hoy."""
+        today = datetime.today().date().isoformat()
+        todays = [t for t in self.tasks if t['due_date'] == today]
+        if not todays:
+            messagebox.showinfo("Filtrar hoy", "No hay tareas para hoy.")
+            return
+        self._display_tasks(todays, header=f"Tareas para hoy: {len(todays)}")
+
+    def _display_tasks(self, task_list, header=""):
+        """Helper para poblar el Listbox y actualizar status."""
         self.listbox.delete(0, tk.END)
-        for t in self.tasks:
+        for t in task_list:
             status = "✔" if t['completed'] else "···"
             text = f"{t['id']:<3} {t['title'][:30]:30} {t['due_date']} Prio:{t['priority']} {status}"
             self.listbox.insert(tk.END, text)
-        self.status.config(text=f"Tareas cargadas: {len(self.tasks)}")
+        self.status.config(text=header)
 
     def on_select(self, event):
-        pass
+        pass  # Por ahora no hace nada al seleccionar
 
     def create_task(self):
         title = simpledialog.askstring("Título", "Ingrese el título de la tarea:")
