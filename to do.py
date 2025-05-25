@@ -130,3 +130,7 @@ if __name__ == "__main__":
     root.geometry("650x450")
     app = TodoApp(root)
     root.mainloop()
+
+
+    # Ignorar datos de usuario y caches
+
