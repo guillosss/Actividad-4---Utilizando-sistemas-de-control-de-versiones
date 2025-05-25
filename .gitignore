@@ -1,0 +1,4 @@
+# Ignorar datos de usuario y caches
+tasks.json
+__pycache__/
+*.pyc
