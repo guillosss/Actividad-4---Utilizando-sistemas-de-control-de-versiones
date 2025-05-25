@@ -22,21 +22,23 @@ def next_id(tasks):
 class TodoApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Lista de Tareas – Confirmación Al Eliminar")
+        self.root.title("Lista de Tareas – Auto Guardado")
         self.tasks = load_tasks()
+
+        # Asegurar guardado al cerrar
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
         self.frame = ttk.Frame(root, padding=10)
         self.frame.pack(fill=tk.BOTH, expand=True)
         self.listbox = tk.Listbox(self.frame, width=60, height=15)
-        self.listbox.pack(side=tk.LEFT,fill=tk.BOTH,expand=True)
-        scrollbar = ttk.Scrollbar(self.frame,orient=tk.VERTICAL,command=self.listbox.yview)
-        scrollbar.pack(side=tk.LEFT,fill=tk.Y)
+        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=self.listbox.yview)
+        scrollbar.pack(side=tk.LEFT, fill=tk.Y)
         self.listbox.config(yscrollcommand=scrollbar.set)
 
         btn_frame = ttk.Frame(root, padding=10)
         btn_frame.pack(fill=tk.X)
         ttk.Button(btn_frame, text="Crear", command=self.create_task).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Eliminar", command=self.delete_task).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Refrescar", command=self.refresh_list).pack(side=tk.LEFT, padx=5)
 
         self.status = ttk.Label(root, text="")
@@ -47,18 +49,9 @@ class TodoApp:
         self.tasks = load_tasks()
         self._display_tasks(self.tasks, header=f"Tareas: {len(self.tasks)}")
 
-    def delete_task(self):
-        sel = self.listbox.curselection()
-        if not sel:
-            messagebox.showwarning("Atención", "Seleccione una tarea.")
-            return
-        idx = sel[0]
-        task = self.tasks[idx]
-        pregunta = f"¿Eliminar tarea «{task['title']}» (ID={task['id']})?"
-        if messagebox.askyesno("Confirmar Eliminación", pregunta):
-            del self.tasks[idx]
-            save_tasks(self.tasks)
-            self.refresh_list()
+    def on_close(self):
+        save_tasks(self.tasks)
+        self.root.destroy()
 
     def _display_tasks(self, task_list, header=""):
         self.listbox.delete(0, tk.END)
@@ -78,7 +71,7 @@ class TodoApp:
             messagebox.showerror("Error","Fecha inválida."); return
         prio = simpledialog.askinteger("Prioridad","1 alta,2 media,3 baja:",1,3)
         task = {'id':next_id(self.tasks),'title':title,'due_date':due_date,
-                'priority':prio or 2, 'completed':False}
+                'priority':prio or 2,'completed':False}
         self.tasks.append(task)
         save_tasks(self.tasks)
         self.refresh_list()
